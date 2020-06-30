@@ -1,6 +1,6 @@
 import { Subject, from, Subscription, Observable, merge, interval } from 'rxjs'
-import {tap, debounceTime, filter, mapTo, delay} from 'rxjs/operators'
-import {getLogger} from 'log4js'
+import { tap, debounceTime, filter, mapTo, delay } from 'rxjs/operators'
+import { getLogger } from 'log4js'
 import { WebSocketClient } from './client'
 import { Msg, MsgType } from '../data/obj'
 
@@ -13,14 +13,14 @@ export abstract class BasePool {
     restartSubject: Subject<string>
 
     client: WebSocketClient | null
-    mainSubscription: Subscription| null
-    closeSubscription: Subscription| null
+    mainSubscription: Subscription | null
+    closeSubscription: Subscription | null
 
-    heartbeatSubscription: Subscription| null
+    heartbeatSubscription: Subscription | null
     lastReceivedData: Msg | null
-    
 
-    constructor (url: string, aliveCheckInterval: number = 30000) {
+
+    constructor(url: string, aliveCheckInterval: number = 30000) {
         this.url = url
 
         this.messageQueue = new Subject()
@@ -31,7 +31,7 @@ export abstract class BasePool {
 
         this.restartSubject.pipe(
             tap(data => getLogger('websocket').debug(`received a reconnect command:${data}`)),
-            debounceTime(aliveCheckInterval/3)
+            debounceTime(aliveCheckInterval / 3)
         ).subscribe(() => {
             getLogger('websocket').info(`websocket ${this.url} may be disconnected. try reconnect.`)
             this.start()
@@ -45,26 +45,26 @@ export abstract class BasePool {
         this.lastReceivedData = null
     }
 
-    start () {
-        this.client = new WebSocketClient(this.url) 
-        const messageObservable = this.client.connect() 
+    start() {
+        this.client = new WebSocketClient(this.url)
+        const messageObservable = this.client.connect()
 
         this.mainSubscription = messageObservable.subscribe(
             data => {
                 getLogger('websocket').info(data)
                 this.messageQueue.next(data)
             })
-        
-         //restart when closed
+
+        //restart when closed
         this.closeSubscription = messageObservable.pipe(
-              filter(data => data.msgType === MsgType.Close)
-          ).subscribe(()=>this.reConnect('closed'))
-         
+            filter(data => data.msgType === MsgType.Close)
+        ).subscribe(() => this.reConnect('closed'))
+
 
         this.heartbeat(messageObservable)
     }
 
-    send (messaage: any) {
+    send(messaage: any) {
         getLogger('websocket').info(`send message:${JSON.stringify(messaage)}`)
 
         try {
@@ -75,18 +75,18 @@ export abstract class BasePool {
         }
     }
 
-    reConnect (signal: string){
+    reConnect(signal: string) {
         getLogger('websocket').debug('reconnect ....')
 
-        if(this.mainSubscription != null){
+        if (this.mainSubscription != null) {
             this.mainSubscription.unsubscribe()
         }
 
-        if(this.closeSubscription != null){
+        if (this.closeSubscription != null) {
             this.closeSubscription.unsubscribe()
         }
 
-        if(this.heartbeatSubscription){
+        if (this.heartbeatSubscription) {
             this.heartbeatSubscription.unsubscribe()
         }
 
@@ -94,7 +94,7 @@ export abstract class BasePool {
         this.restartSubject.next(signal)
     }
 
-    heartbeat (messageObservable: Observable<Msg>) {
+    heartbeat(messageObservable: Observable<Msg>) {
         this.heartbeatSubscription = merge(
             interval(this.aliveCheckInterval).pipe(mapTo({
                 msgType: MsgType.Check
@@ -102,7 +102,7 @@ export abstract class BasePool {
             messageObservable
         ).subscribe(
             data => {
-                if ((this.lastReceivedData != null && this.lastReceivedData.msgType === MsgType.Check) 
+                if ((this.lastReceivedData != null && this.lastReceivedData.msgType === MsgType.Check)
                     && (data != null && data.msgType === MsgType.Check)) {
                     this.reConnect('timeout')
 
@@ -118,10 +118,10 @@ export abstract class BasePool {
 
                 from([1])
                     .pipe(delay(1000 * 5))
-                    .subscribe(()=>this.reConnect('heartbeat error happens'))
+                    .subscribe(() => this.reConnect('heartbeat error happens'))
             }
         )
     }
 
-    abstract responseHeartbeat(data: Msg):void;
+    abstract responseHeartbeat(data: Msg): void;
 }

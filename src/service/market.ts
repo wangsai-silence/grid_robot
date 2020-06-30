@@ -3,26 +3,26 @@ import { MarketAPI, MarketDetailMerged, MarketSymbols, BaseCurrency } from "../u
 import { qGet } from "../utils/rest"
 
 export interface MarketDetailMergedInfo {
-    id:number,
-    ts:number,
-    close:number,
-    open:number,
-    high:number,
-    low:number,
-    amount:number,
-    count:number,
-    vol:number,
-    ask:number[],
-    bid:number[]
+    id: number,
+    ts: number,
+    close: number,
+    open: number,
+    high: number,
+    low: number,
+    amount: number,
+    count: number,
+    vol: number,
+    ask: number[],
+    bid: number[]
 }
 
 export function getMergedDetail(symbol: string): Promise<MarketDetailMergedInfo> {
-        return qGet<MarketDetailMergedInfo>(MarketAPI + MarketDetailMerged, {
-            symbol
+    return qGet<MarketDetailMergedInfo>(MarketAPI + MarketDetailMerged, {
+        symbol
     })
 }
 
-export function getAllSymbolInfo():Promise<SymbolInfo[]> {
+export function getAllSymbolInfo(): Promise<SymbolInfo[]> {
     return qGet<SymbolInfo[]>(MarketAPI + MarketSymbols, {})
 }
 
@@ -39,14 +39,14 @@ export interface SymbolInfo {
     minOrderValue?: number
 }
 
-export function getSymbolInfo (symbol: string): SymbolInfo | null{
-    for(let base of BaseCurrency){
+export function getSymbolInfo(symbol: string): SymbolInfo | null {
+    for (let base of BaseCurrency) {
         const index = symbol.indexOf(base)
-        if (index <0){
+        if (index < 0) {
             continue
         }
 
-        if(index + base.length === symbol.length){
+        if (index + base.length === symbol.length) {
             return {
                 symbol: symbol,
                 quoteCurrency: base,

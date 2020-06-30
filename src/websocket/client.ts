@@ -7,8 +7,8 @@ import { changeToCamelCase } from "../utils/string"
 export class WebSocketClient {
     client: WebSocket
 
-    constructor (url: string){
-        this.client = new WebSocket(url) 
+    constructor(url: string) {
+        this.client = new WebSocket(url)
     }
 
     onObserve(observer: Observer<Msg>): void {
@@ -23,7 +23,7 @@ export class WebSocketClient {
             }))
 
             this.client.on('message', data => {
-                let res = inflate(<Uint8Array>data, {to: 'string'})
+                let res = inflate(<Uint8Array>data, { to: 'string' })
                 let result: Msg = {
                     msgType: MsgType.Msg,
                     data: changeToCamelCase(res)
@@ -38,11 +38,11 @@ export class WebSocketClient {
         }
     }
 
-    connect ():Observable<Msg> {
+    connect(): Observable<Msg> {
         return Observable.create(this.onObserve.bind(this))
     }
 
-    send (message: string) {
+    send(message: string) {
         this.client.send(message)
     }
 }

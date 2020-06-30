@@ -22,7 +22,7 @@ import log4jsExtend from 'log4js-extend'
 //     }
 // }
 
-export function init () {
+export function init() {
     log4js.configure({
         appenders: {
             std: {

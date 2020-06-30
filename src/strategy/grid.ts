@@ -5,10 +5,10 @@ import { getLogger } from "log4js"
 import { tap, mergeMap, concatMap, map, toArray, reduce, filter, delay, take } from "rxjs/operators"
 import { Connection, In } from "typeorm"
 import { StrategyOrder, StrategyInfo, StrategyState, Strategy, StrategyType } from "./types"
-import {BigNumber} from 'bignumber.js';
+import { BigNumber } from 'bignumber.js';
 import { getMergedDetail, getAllSymbolInfo, getSymbolInfo, SymbolInfo } from "../service/market"
 import { from, merge } from "rxjs"
-import {prompt} from 'inquirer'
+import { prompt } from 'inquirer'
 import { PlainObj } from "../data/obj"
 
 const FixedPricePrec = 8
@@ -27,7 +27,7 @@ export class Grid implements Strategy {
     count: number
     amount: string
 
-    constructor (info :StrategyInfo, conn: Connection, authService: Auth, orderService: Order, accountService: Account){
+    constructor(info: StrategyInfo, conn: Connection, authService: Auth, orderService: Order, accountService: Account) {
         this.info = info
 
         let content = info.content
@@ -49,31 +49,31 @@ export class Grid implements Strategy {
     }
 
     async run() {
-        if(this.info.state == StrategyState.On) {
+        if (this.info.state == StrategyState.On) {
             await this.handleOpen()
-        }else {
+        } else {
             await this.handleClosed()
         }
     }
 
-    async handleOpen () {
+    async handleOpen() {
         getLogger().info(`handle open tasks:${JSON.stringify(this.info)}`)
         //get current price
         const curPrice = await getMergedDetail(this.symbol).then(data => data.close)
 
-         let orderPrices = await from(this.db.getRepository(OrderInfo)
-                .createQueryBuilder("o")
-                .leftJoinAndSelect("strategy_order", "so", "so.orderId = o.id")
-                .where("o.state in (:s1, :s2) and so.strategyId = :id", {id: this.info.id, s1: OrderState.Submitted, s2: OrderState.PartialFilled})
-                .getMany()).pipe(
-                    mergeMap(orders => from(orders)),
-                    map(order => new BigNumber(order.price).toFixed(FixedPricePrec)),
-                    reduce((acc, price) => {
-                    acc.set(price, '') 
+        let orderPrices = await from(this.db.getRepository(OrderInfo)
+            .createQueryBuilder("o")
+            .leftJoinAndSelect("strategy_order", "so", "so.orderId = o.id")
+            .where("o.state in (:s1, :s2) and so.strategyId = :id", { id: this.info.id, s1: OrderState.Submitted, s2: OrderState.PartialFilled })
+            .getMany()).pipe(
+                mergeMap(orders => from(orders)),
+                map(order => new BigNumber(order.price).toFixed(FixedPricePrec)),
+                reduce((acc, price) => {
+                    acc.set(price, '')
 
-                        return acc
-                    }, new Map<string, string>())
-                ).toPromise()
+                    return acc
+                }, new Map<string, string>())
+            ).toPromise()
 
         getLogger().debug(`cur price: ${curPrice}`)
         getLogger().debug(`cur order prices: ${Array.from(orderPrices.keys()).toString()}`)
@@ -96,24 +96,24 @@ export class Grid implements Strategy {
         }
 
         //check whether balance is enough or not 
-        const symbolInfo = getSymbolInfo(this.symbol) 
-        if(!symbolInfo) {
+        const symbolInfo = getSymbolInfo(this.symbol)
+        if (!symbolInfo) {
             getLogger().fatal(`failed to get symbol info[${this.symbol}]`)
-            return 
+            return
         }
 
-        const balanceNeeded = new Map<string, BigNumber>()        
+        const balanceNeeded = new Map<string, BigNumber>()
         balanceNeeded.set(symbolInfo.baseCurrency, new BigNumber(0))
         balanceNeeded.set(symbolInfo.quoteCurrency, new BigNumber(0))
 
         lackPrices.forEach(item => {
-            if(new BigNumber(item).comparedTo(curPrice) <=0) {
-                let org =  balanceNeeded.get(symbolInfo.quoteCurrency)
-                if(org)
+            if (new BigNumber(item).comparedTo(curPrice) <= 0) {
+                let org = balanceNeeded.get(symbolInfo.quoteCurrency)
+                if (org)
                     balanceNeeded.set(symbolInfo.quoteCurrency, org.plus(new BigNumber(item).times(this.amount)))
-            }else{
+            } else {
                 let org = balanceNeeded.get(symbolInfo.baseCurrency)
-                if(org)
+                if (org)
                     balanceNeeded.set(symbolInfo.baseCurrency, org.plus(this.amount))
             }
         })
@@ -123,21 +123,21 @@ export class Grid implements Strategy {
             mergeMap(data => from(data.list)),
             filter(balance => balance.type === BalanceType.Trade),
             tap(data => {
-                if(data.balance !== '0'){
+                if (data.balance !== '0') {
                     getLogger().debug(data)
                 }
             }),
-            reduce((acc, value)=> {
+            reduce((acc, value) => {
                 acc.set(value.currency, value)
                 return acc
             }, new Map<string, BalanceInfo>()),
         ).toPromise()
-        
-        for(const [
-                key,
-                value
-                ] of balanceNeeded){
-            if(!balance.has(key) || value.comparedTo(new BigNumber((balance.get(key) as BalanceInfo).balance))>0){
+
+        for (const [
+            key,
+            value
+        ] of balanceNeeded) {
+            if (!balance.has(key) || value.comparedTo(new BigNumber((balance.get(key) as BalanceInfo).balance)) > 0) {
                 getLogger().warn(`task ${this.info} need ${key} ${value}, but account just has ${balance.get(key)?.balance}`)
                 return
             }
@@ -150,7 +150,7 @@ export class Grid implements Strategy {
             map(price => ({
                 ['account-id']: account.id + "",
                 symbol: this.symbol,
-                type: new BigNumber(price).comparedTo(curPrice) <= 0 ? OrderType.BuyLimitMaker: OrderType.SellLimitMaker,
+                type: new BigNumber(price).comparedTo(curPrice) <= 0 ? OrderType.BuyLimitMaker : OrderType.SellLimitMaker,
                 amount: this.amount,
                 price: price,
             })),
@@ -167,21 +167,21 @@ export class Grid implements Strategy {
         )
     }
 
-    async handleClosed (){
+    async handleClosed() {
         getLogger().info(`handle closed tasks:${JSON.stringify(this.info)}`)
         //get task orders
-            
+
         const result = await from(this.db.getRepository(OrderInfo)
-                .createQueryBuilder("o")
-                .leftJoinAndSelect("strategy_order", "so", "so.orderId = o.id")
-                .where("o.state in (:s1, :s2) and so.strategyId = :id", {id: this.info.id, s1: OrderState.Submitted, s2: OrderState.PartialFilled})
-                .getMany()).pipe(
-	    mergeMap(orders => from(orders)),
-            map(order => order.id + ''),
-            toArray(),
-            filter(orderIds => orderIds.length > 0),
-            concatMap(orderIds => this.orderService.batchCancelOrders(orderIds)),
-        ).toPromise()
+            .createQueryBuilder("o")
+            .leftJoinAndSelect("strategy_order", "so", "so.orderId = o.id")
+            .where("o.state in (:s1, :s2) and so.strategyId = :id", { id: this.info.id, s1: OrderState.Submitted, s2: OrderState.PartialFilled })
+            .getMany()).pipe(
+                mergeMap(orders => from(orders)),
+                map(order => order.id + ''),
+                toArray(),
+                filter(orderIds => orderIds.length > 0),
+                concatMap(orderIds => this.orderService.batchCancelOrders(orderIds)),
+            ).toPromise()
 
         getLogger().info(`batch cancel orders ${result} success`)
     }
@@ -193,13 +193,13 @@ export class Grid implements Strategy {
             message: 'Please input trade symbol:\n'
         })).pipe(
             mergeMap(data => from(getAllSymbolInfo()).pipe(
-                        mergeMap(symbols => from(symbols)), 
-                        filter(symbol => symbol.symbol === data.symbol),
-                        take(1)
-                    )
-                ),
+                mergeMap(symbols => from(symbols)),
+                filter(symbol => symbol.symbol === data.symbol),
+                take(1)
+            )
+            ),
         ).toPromise()
-    
+
         const marketInfo = await getMergedDetail(symbolInfo.symbol)
         const curPrice = new BigNumber(marketInfo.close)
 
@@ -226,7 +226,7 @@ export class Grid implements Strategy {
                 message: `Please input amount for every grid(Precision:${symbolInfo.amountPrecision}):\n`
             }
         ]
-       
+
         const inputInfos = await prompt(promiseArr)
 
         inputInfos.symbol = symbolInfo.symbol
@@ -236,42 +236,42 @@ export class Grid implements Strategy {
         const ePrice = new BigNumber(inputInfos['end-price'] as string)
         const gAmount = new BigNumber(inputInfos['grid-amount'] as string)
         const gCount = parseInt(inputInfos['grid-count'] as string)
-        
-        if (sPrice.gte(ePrice)){
+
+        if (sPrice.gte(ePrice)) {
             throw new Error('start price is higher than end price')
         }
 
-        if(gCount <=0){
+        if (gCount <= 0) {
             throw new Error('grid count should greater than 0')
         }
-        
-        const rate = new BigNumber(Math.pow(ePrice.div(sPrice).toNumber(), 1.0/gCount) - 1)
-    
+
+        const rate = new BigNumber(Math.pow(ePrice.div(sPrice).toNumber(), 1.0 / gCount) - 1)
+
         let gridPrices = new Array<BigNumber>()
         gridPrices.push(sPrice)
 
-        for(let i = 1; i < gCount; i ++) {
-            gridPrices.push(gridPrices[i-1].times(rate.plus(1)))
+        for (let i = 1; i < gCount; i++) {
+            gridPrices.push(gridPrices[i - 1].times(rate.plus(1)))
         }
         gridPrices.push(ePrice)
-   
+
         //check account balance enough
         const result = await this.calcBalance(symbolInfo.symbol, gridPrices, gAmount, curPrice)
-        if(!result){
+        if (!result) {
             getLogger().error('no enough balance')
             return
         }
-    
+
         const confirm = await prompt({
             type: 'confirm',
             name: 'confirm',
             message: `Calculate rate result is:${rate.toString()}, with trading fee included. 
          Every grid finished you can earn ${gAmount.times(rate)}. 
          Would you like to continue?`,
-            default: false 
+            default: false
         })
-    
-        if(!confirm.confirm){
+
+        if (!confirm.confirm) {
             return
         }
 
@@ -286,40 +286,40 @@ export class Grid implements Strategy {
                 amount: gAmount.toFixed(symbolInfo.amountPrecision as number)
             } as PlainObj
         })
-   
+
         return
     }
 
-    async calcBalance (symbol :string, gridPrices: Array<BigNumber>, gridAmount: BigNumber, curPrice: BigNumber){
+    async calcBalance(symbol: string, gridPrices: Array<BigNumber>, gridAmount: BigNumber, curPrice: BigNumber) {
         const needBalanceMap = new Map<string, BigNumber>()
         const symbolInfo = getSymbolInfo(symbol) as SymbolInfo
-    
+
         needBalanceMap.set(symbolInfo.quoteCurrency, new BigNumber(0))
         needBalanceMap.set(symbolInfo.baseCurrency, new BigNumber(0))
-    
+
         gridPrices.forEach(price => {
-            if(price.gte(curPrice)){
+            if (price.gte(curPrice)) {
                 needBalanceMap.set(symbolInfo.baseCurrency, (needBalanceMap.get(symbolInfo.baseCurrency) as BigNumber).plus(new BigNumber(gridAmount)))
-            }else {
+            } else {
                 needBalanceMap.set(symbolInfo.quoteCurrency, (needBalanceMap.get(symbolInfo.quoteCurrency) as BigNumber).plus(new BigNumber(gridAmount).times(price)))
             }
         });
-    
+
         const account = await this.accountService.getAccountByType(AccountType.Spot)
-    
+
         const balanceMap = await from(this.accountService.getBalance(account)).pipe(
-                mergeMap(data => from(data.list)),
-                filter(data => data.type === BalanceType.Trade),
-                reduce((acc, value)=>{
-                    acc.set(value.currency, value.balance); 
-                    return acc
-                }, new Map())
-            ).toPromise()
-    
+            mergeMap(data => from(data.list)),
+            filter(data => data.type === BalanceType.Trade),
+            reduce((acc, value) => {
+                acc.set(value.currency, value.balance);
+                return acc
+            }, new Map())
+        ).toPromise()
+
         getLogger().info(`need ${symbolInfo.baseCurrency} ${needBalanceMap.get(symbolInfo.baseCurrency)} got ${balanceMap.get(symbolInfo.baseCurrency)}, 
                      need ${symbolInfo.quoteCurrency} ${needBalanceMap.get(symbolInfo.quoteCurrency)} got ${balanceMap.get(symbolInfo.quoteCurrency)}`)
-    
-        return new BigNumber(balanceMap.get(symbolInfo.baseCurrency)).gte(needBalanceMap.get(symbolInfo.baseCurrency)as BigNumber) &&  
-            new BigNumber(balanceMap.get(symbolInfo.quoteCurrency)).gte(needBalanceMap.get(symbolInfo.quoteCurrency)as BigNumber)
+
+        return new BigNumber(balanceMap.get(symbolInfo.baseCurrency)).gte(needBalanceMap.get(symbolInfo.baseCurrency) as BigNumber) &&
+            new BigNumber(balanceMap.get(symbolInfo.quoteCurrency)).gte(needBalanceMap.get(symbolInfo.quoteCurrency) as BigNumber)
     }
 }

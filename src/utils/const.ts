@@ -1,26 +1,26 @@
- 
-export const    MarketWebSocket= 'wss://api.huobi.pro/ws'
 
-export const    OP_ACCOUNTS= 'accounts'
+export const MarketWebSocket = 'wss://api.huobi.pro/ws'
 
-export const    REQ= 'req'
-export const    REQ_ACCOUNTS_LIST= 'accounts.list'
-export const    REQ_ORDER_DETAIL= 'orders.detail'
+export const OP_ACCOUNTS = 'accounts'
 
-export const    NOTIFY= 'notify'
+export const REQ = 'req'
+export const REQ_ACCOUNTS_LIST = 'accounts.list'
+export const REQ_ORDER_DETAIL = 'orders.detail'
 
-export const    PING= 'ping'
-export const    PONG= 'pong'
+export const NOTIFY = 'notify'
 
-export const    SUB= 'sub'
+export const PING = 'ping'
+export const PONG = 'pong'
 
-export const    ERR_CODE= 'err-code'
+export const SUB = 'sub'
 
-export const    AccountAPI= 'https://api.huobi.pro'
+export const ERR_CODE = 'err-code'
+
+export const AccountAPI = 'https://api.huobi.pro'
 
 // export const AccountBalance = '/v1/account/accounts/{account-id}/balance'
 interface AccountAPI {
-    AccountWebSocket:string
+    AccountWebSocket: string
 
     OpenOrders: string
 
@@ -35,7 +35,7 @@ interface AccountAPI {
     Orders: string
 
     Accounts: string
-    
+
     AccountHistory: string
 }
 
@@ -60,11 +60,11 @@ export const V1: AccountAPI = {
 }
 
 
-export const    MarketAPI= 'https://api.huobi.pro'
-export const    MarketDetailMerged= '/market/detail/merged'
-export const    MarketSymbols = '/v1/common/symbols'
+export const MarketAPI = 'https://api.huobi.pro'
+export const MarketDetailMerged = '/market/detail/merged'
+export const MarketSymbols = '/v1/common/symbols'
 
-export const    BaseCurrency= [
+export const BaseCurrency = [
     'btc',
     'usdt',
     'husd',

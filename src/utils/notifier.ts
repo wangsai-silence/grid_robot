@@ -4,11 +4,11 @@ import { from } from "rxjs"
 import { config } from "../../config"
 import { getLogger } from "log4js"
 
-export function sendMsg (message : string | PlainObj): void {
+export function sendMsg(message: string | PlainObj): void {
     let msgObj = null
-    if(typeof message === 'string'){
+    if (typeof message === 'string') {
         msgObj = JSON.parse(message)
-    }else {
+    } else {
         msgObj = message
     }
 
@@ -22,7 +22,7 @@ export function sendMsg (message : string | PlainObj): void {
      *    }'   
      */
 
-     from(rp.post({
+    from(rp.post({
         uri: config.notifier.dingding.webhook,
         method: 'POST',
         headers: {
@@ -40,7 +40,7 @@ export function sendMsg (message : string | PlainObj): void {
     )
 }
 
-export function sendAlert (message: PlainObj): void{
+export function sendAlert(message: PlainObj): void {
     from(rp.post({
         uri: config.notifier.dingding.webhook,
         method: 'POST',
@@ -52,7 +52,7 @@ export function sendAlert (message: PlainObj): void{
             text: {
                 content: JSON.stringify(message, null, 2)
             },
-            at: {atMobiles: config.notifier.dingding.mobiles}
+            at: { atMobiles: config.notifier.dingding.mobiles }
         }
     })).subscribe(
         null,

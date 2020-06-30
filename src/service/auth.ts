@@ -5,8 +5,8 @@ import * as urlUtil from 'url'
 import { getLogger } from "log4js"
 import * as crypto from 'crypto'
 import { Method } from "../utils/rest"
-import {Op} from '../data/spot'
-import {MsgType, Msg, PlainObj} from '../data/obj'
+import { Op } from '../data/spot'
+import { MsgType, Msg, PlainObj } from '../data/obj'
 
 interface AuthResp {
     op: Op,
@@ -14,15 +14,15 @@ interface AuthResp {
 }
 
 export class Auth {
-    id:string 
+    id: string
     key: string
 
-    constructor (id: string, key: string) {
+    constructor(id: string, key: string) {
         this.id = id
         this.key = key
     }
 
-    sendAuth (pool: BasePool): Observable<Msg> {
+    sendAuth(pool: BasePool): Observable<Msg> {
         const authPassedSubject = new Subject<Msg>()
 
         pool.messageQueue.pipe(
@@ -43,7 +43,7 @@ export class Auth {
         return authPassedSubject
     }
 
-    addSignature (url: string, method: Method, params: PlainObj): PlainObj {
+    addSignature(url: string, method: Method, params: PlainObj): PlainObj {
         const timeStamp = Auth.getUTCTime()
         params.Timestamp = timeStamp
         params.SignatureMethod = 'HmacSHA256'
@@ -51,13 +51,13 @@ export class Auth {
         params.AccessKeyId = this.id
 
         const sorted: PlainObj = {}
-        Object.keys(params).sort().forEach(key =>  sorted[key] = encodeURIComponent(params[key]))
+        Object.keys(params).sort().forEach(key => sorted[key] = encodeURIComponent(params[key]))
 
         const urlInfo = urlUtil.parse(url)
         let toBeSigned = `${method.toUpperCase()}\n` +
-        `${urlInfo.host}\n` +
-        `${urlInfo.path}\n` +
-        `${Object.keys(sorted).map(key => key + '=' + sorted[key]).join('&')}`
+            `${urlInfo.host}\n` +
+            `${urlInfo.path}\n` +
+            `${Object.keys(sorted).map(key => key + '=' + sorted[key]).join('&')}`
 
         getLogger().info(toBeSigned)
         const signature = crypto.createHmac('sha256', this.key).update(toBeSigned, 'utf8').digest('base64')
@@ -66,7 +66,7 @@ export class Auth {
         return params
     }
 
-    static getUTCTime () {
+    static getUTCTime() {
         return new Date().toISOString().slice(0, -5)
     }
 }

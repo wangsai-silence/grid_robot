@@ -2,7 +2,7 @@ import { qGet, Method, qPost } from "../utils/rest";
 import { getLogger } from "log4js"
 import { Auth } from "./auth";
 import { V1, AccountAPI } from "../utils/const";
-import {Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne} from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne } from "typeorm";
 import { Subject } from "rxjs";
 import { Op } from "../data/spot";
 import { filter, map, tap } from "rxjs/operators";
@@ -17,11 +17,11 @@ export enum OrderType {
 }
 
 export enum OrderState {
-    Filled = 'filled',         
+    Filled = 'filled',
     PartialFilled = 'partial-filled',
-    Submitted = 'submitted',      
+    Submitted = 'submitted',
     PartialCanceled = 'partial-canceled',
-    Canceled = 'canceled' 
+    Canceled = 'canceled'
 }
 
 export enum OrderSide {
@@ -34,46 +34,46 @@ export class OrderInfo {
     @PrimaryGeneratedColumn()
     _id: number
 
-    @Column('bigint', {unique: true})
+    @Column('bigint', { unique: true })
     id: number
 
-    @Column('varchar', {length: 20})
+    @Column('varchar', { length: 20 })
     symbol: string
 
-    @Column('bigint', {nullable: true})
+    @Column('bigint', { nullable: true })
     accountId: number
 
-    @Column('varchar', {length: 50})
+    @Column('varchar', { length: 50 })
     amount: string
 
-    @Column('varchar', {length: 20})
+    @Column('varchar', { length: 20 })
     price: string
 
     @Column('bigint')
     createdAt: number
 
-    @Column('bigint', {nullable: true})
+    @Column('bigint', { nullable: true })
     finishedAt?: number
 
-    @Column('bigint', {nullable: true})
+    @Column('bigint', { nullable: true })
     canceledAt?: number
 
-    @Column('varchar', {length: 20})
+    @Column('varchar', { length: 20 })
     type: OrderType
 
-    @Column('varchar', {length: 50, nullable: true})
+    @Column('varchar', { length: 50, nullable: true })
     filledAmount: string
 
-    @Column('varchar', {length: 50, nullable: true})
+    @Column('varchar', { length: 50, nullable: true })
     filledCashAmount: string
 
-    @Column('varchar', {length: 50, nullable: true})
+    @Column('varchar', { length: 50, nullable: true })
     filledFees: string
 
-    @Column('varchar', {length: 50, nullable: true})
+    @Column('varchar', { length: 50, nullable: true })
     source?: string
 
-    @Column('varchar', {length: 50})
+    @Column('varchar', { length: 50 })
     state: OrderState
 
     @CreateDateColumn()
@@ -83,43 +83,43 @@ export class OrderInfo {
     updateTime?: string
 
     fill(oldInfo: OrderInfo) {
-        if(!this._id)    {
+        if (!this._id) {
             this._id = oldInfo._id
         }
 
-        if(!this.id) {
+        if (!this.id) {
             this.id = oldInfo.id
         }
 
-        if(!this.filledAmount) {
+        if (!this.filledAmount) {
             this.filledAmount = oldInfo.filledAmount
         }
 
-        if(!this.filledCashAmount) {
+        if (!this.filledCashAmount) {
             this.filledCashAmount = oldInfo.filledCashAmount
         }
 
-        if(!this.filledFees) {
+        if (!this.filledFees) {
             this.filledFees = oldInfo.filledFees
         }
 
-        if(!this.price) {
+        if (!this.price) {
             this.price = oldInfo.price
         }
 
-        if(!this.source) {
+        if (!this.source) {
             this.source = oldInfo.source
         }
 
-        if(!this.state) {
+        if (!this.state) {
             this.state = oldInfo.state
         }
 
-        if(!this.symbol) {
+        if (!this.symbol) {
             this.symbol = oldInfo.symbol
         }
 
-        if(!this.type) {
+        if (!this.type) {
             this.type = oldInfo.type
         }
 
@@ -157,7 +157,7 @@ export class Order {
     }
 
     getOrderDetail(orderId: number): Promise<OrderInfo> {
-        const url = AccountAPI + V1.Orders + '/' + orderId 
+        const url = AccountAPI + V1.Orders + '/' + orderId
         return qGet(url, this.auth.addSignature(url, Method.GET, {
 
         }))
@@ -202,10 +202,10 @@ export class Order {
             map(msg => JSON.parse(<string>msg.data)),
             filter(msg => msg.topic === topic && msg.op === Op.Notify),
         ).subscribe(data => {
-            if(data.errCode){
+            if (data.errCode) {
                 res.error(data)
-            }else{
-                if(data.data){
+            } else {
+                if (data.data) {
                     let order = new OrderInfo()
 
                     order.type = data.data.orderType
@@ -216,12 +216,12 @@ export class Order {
                     order.filledAmount = data.data.filledAmount
                     order.filledCashAmount = data.data.filledCashAmount
 
-                    if(order.state === OrderState.Submitted){
+                    if (order.state === OrderState.Submitted) {
                         order.amount = data.data.unfilledAmount
                         order.createdAt = data.ts
                     }
 
-                    if(order.state === OrderState.Canceled) {
+                    if (order.state === OrderState.Canceled) {
                         order.canceledAt = data.ts
                     }
 
@@ -230,18 +230,18 @@ export class Order {
             }
         })
 
-       pool.send({
-           op: Op.Sub,
-           topic: topic
-       })
+        pool.send({
+            op: Op.Sub,
+            topic: topic
+        })
 
-       return res
+        return res
     }
 
-    convertSubDataToOrderInfo(data : any): OrderInfo {
+    convertSubDataToOrderInfo(data: any): OrderInfo {
         let order = new OrderInfo()
 
-        if(data.eventType === 'creation') {
+        if (data.eventType === 'creation') {
             order.id = data.orderId
             order.symbol = data.symbol
             order.state = data.orderStatus
@@ -249,14 +249,14 @@ export class Order {
             order.price = data.orderPrice
             order.amount = data.orderSize
             order.createdAt = data.orderCreateTime
-        }else if (data.eventType === 'trade') {
+        } else if (data.eventType === 'trade') {
             order.id = data.orderId
             order.symbol = data.symbol
             order.type = data.type
             order.state = data.orderStatus
             order.price = data.tradePrice
             order.filledCashAmount = data.tradeVolume
-        }else if (data.eventType === 'cancellation') {
+        } else if (data.eventType === 'cancellation') {
             order.id = data.orderId
             order.symbol = data.symbol
             order.state = data.orderStatus
@@ -265,7 +265,7 @@ export class Order {
             order.amount = data.orderSize
         }
 
-        return  order
+        return order
     }
 }
 
@@ -273,10 +273,10 @@ export interface OrderNotify {
     op: Op,
     ts: number,
     topic: string,
-    data: OrderNotifyData 
+    data: OrderNotifyData
 }
 
-interface OrderNotifyData{
+interface OrderNotifyData {
     orderType: OrderType,
     role: string,
     unfilledAmount: string,
@@ -286,7 +286,7 @@ interface OrderNotifyData{
     matchId: number,
     filledCashAmount: string,
     filledAmount: string,
-    price:string,
+    price: string,
     orderState: OrderState
 }
 

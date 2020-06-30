@@ -22,7 +22,7 @@ export class Checker {
 
     pool: BasePool
 
-    constructor (pool: BasePool, conn: Connection, authService: Auth, orderService: Order, accountService: Account){
+    constructor(pool: BasePool, conn: Connection, authService: Auth, orderService: Order, accountService: Account) {
         this.pool = pool
         this.db = conn
         this.authService = authService
@@ -35,7 +35,7 @@ export class Checker {
             tap(() => getLogger().debug('start check task info')),
             debounceTime(1000),
             mergeMap(id => from(id >= 0
-                ? this.db.getRepository(StrategyInfo).find({id: id})               
+                ? this.db.getRepository(StrategyInfo).find({ id: id })
                 : this.db.getRepository(StrategyInfo).find())),
             mergeMap(strategies => from(strategies)),
             concatMap(strategy => from(this.handleStrategy(strategy))),
@@ -48,10 +48,10 @@ export class Checker {
             () => getLogger().warn('Task subscribe is finished. This should never happen.')
         )
 
-        interval(config.grid.taskCheckInterval).subscribe(()=> this.taskCheckSubject.next(-1))
+        interval(config.grid.taskCheckInterval).subscribe(() => this.taskCheckSubject.next(-1))
     }
 
-    async start (){
+    async start() {
         //check task info 
         let strategies = await from(this.db.getRepository(StrategyInfo).find()).pipe(
             mergeMap(infos => from(infos)),
@@ -63,12 +63,12 @@ export class Checker {
             concatMap(strategy => this.db.getRepository(OrderInfo)
                 .createQueryBuilder("o")
                 .leftJoinAndSelect("strategy_order", "so", "so.orderId = o.id")
-                .where("o.state in (:s1, :s2) and so.strategyId = :id", {id: strategy.id, s1: OrderState.Submitted, s2: OrderState.PartialFilled})
+                .where("o.state in (:s1, :s2) and so.strategyId = :id", { id: strategy.id, s1: OrderState.Submitted, s2: OrderState.PartialFilled })
                 .getMany()),
             flatMap(orders => from(orders)),
             concatMap(order => from(this.orderService.getOrderDetail(order.id)).pipe(delay(100))),
             // mergeMap((old, newO) => this.db.getRepository(OrderInfo).update(old, newO)),
-            mergeMap(info => this.db.createQueryBuilder().update(OrderInfo).set({state: info.state}).where("id=:id", {id: info.id}).execute())
+            mergeMap(info => this.db.createQueryBuilder().update(OrderInfo).set({ state: info.state }).where("id=:id", { id: info.id }).execute())
         ).toPromise()
 
         //subscribe order changes
@@ -87,40 +87,40 @@ export class Checker {
         ).subscribe(
             id => this.taskCheckSubject.next(id),
             err => getLogger().error(err)
-        )       
+        )
     }
 
-    addOrderSubscriber (symbols: Array<string>){
-        if(this.subscription){
+    addOrderSubscriber(symbols: Array<string>) {
+        if (this.subscription) {
             this.subscription.unsubscribe()
         }
 
         this.subscription = this.orderService.subOrderUpdate(this.pool, "*").pipe(
             // mergeMap(symbol => this.orderService.subOrderUpdate(this.pool, symbol)),
-            tap(msg => sendMsg(msg)), 
-            concatMap(order =>  from(this.db.getRepository(OrderInfo).findOne({id: order.id})).pipe(
+            tap(msg => sendMsg(msg)),
+            concatMap(order => from(this.db.getRepository(OrderInfo).findOne({ id: order.id })).pipe(
                 mergeMap(o => {
-                    if(o) {
-                            o.state = order.state,
+                    if (o) {
+                        o.state = order.state,
                             o.filledAmount = order.filledAmount
-                            return this.db.getRepository(OrderInfo).save(o)
+                        return this.db.getRepository(OrderInfo).save(o)
                     }
 
                     return this.db.getRepository(OrderInfo).save(order)
                 })
             )),
             filter(order => order.state === OrderState.Filled),
-            mergeMap(order => this.db.getRepository(StrategyOrder).findOne({where:{orderId: order.id}})),
+            mergeMap(order => this.db.getRepository(StrategyOrder).findOne({ where: { orderId: order.id } })),
         ).subscribe(
             data => this.taskCheckSubject.next(data?.strategyId),
-            err => getLogger().error(err) 
+            err => getLogger().error(err)
         )
     }
 
 
     async handleStrategy(info: StrategyInfo) {
         let strategy = createStrategy(info, this.db, this.authService, this.orderService, this.accountService)
-        if(!strategy){
+        if (!strategy) {
             return
         }
 

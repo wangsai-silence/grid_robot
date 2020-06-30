@@ -1,6 +1,6 @@
-export enum MsgType{
-    Open = 'open', 
-    Close = 'close', 
+export enum MsgType {
+    Open = 'open',
+    Close = 'close',
     Error = 'error',
     Msg = 'message',
     Check = 'check',

@@ -21,9 +21,9 @@ export class StrategyInfo {
     id: number
 
     @Column('json')
-    content: PlainObj 
+    content: PlainObj
 
-    @Column('varchar', {length: 20})
+    @Column('varchar', { length: 20 })
     type: StrategyType
 
     @Column('int')
@@ -36,10 +36,10 @@ export class StrategyInfo {
     updateTime: string
 }
 
-export function createStrategy(info: StrategyInfo, conn: Connection, authService: Auth, orderService: Order, accountService: Account): Strategy|undefined {
-    switch(info.type) {
+export function createStrategy(info: StrategyInfo, conn: Connection, authService: Auth, orderService: Order, accountService: Account): Strategy | undefined {
+    switch (info.type) {
         case StrategyType.Grid:
-            return new Grid(info, conn, authService,orderService, accountService)
+            return new Grid(info, conn, authService, orderService, accountService)
         default:
             return
     }
@@ -61,7 +61,7 @@ export class StrategyOrder {
     @Column('int')
     strategyId: number
 
-    @Column('bigint', {unique: true})
+    @Column('bigint', { unique: true })
     orderId: number
 
     @CreateDateColumn()

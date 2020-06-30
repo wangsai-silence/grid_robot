@@ -1,4 +1,4 @@
-import {prompt} from 'inquirer'
+import { prompt } from 'inquirer'
 import { Auth } from './service/auth'
 import { Order, OrderInfo } from './service/order'
 import { Account } from './service/account'
@@ -29,7 +29,7 @@ async function main() {
         }
     ]
 
-    const data =  await prompt(promiseArr)
+    const data = await prompt(promiseArr)
     const awsId = data.id as string
     const awsKey = data.key as string
 
@@ -38,9 +38,10 @@ async function main() {
 
     let db = await createConnection({
         entities: [OrderInfo, StrategyInfo, StrategyOrder],
+        host: config.db.host,
         username: config.db.username,
         password: config.db.password,
-        database: config.db.database,                
+        database: config.db.database,
         type: "mysql",
         synchronize: true,
         logging: false,
@@ -52,7 +53,7 @@ async function main() {
 
     const checker = new Checker(pool, db, authService, orderService, accountService)
 
-    sendMsg({msg: 'quant application starting...'})
+    sendMsg({ msg: 'quant application starting...' })
 
     init()
 
@@ -68,5 +69,5 @@ async function main() {
 main()
 process.on('uncaughtException', err => {
     getLogger().error(err)
-    of(1).pipe(delay(3000)).subscribe(()=>process.exit(0))
+    of(1).pipe(delay(3000)).subscribe(() => process.exit(0))
 })

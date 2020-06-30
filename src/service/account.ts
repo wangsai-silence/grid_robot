@@ -1,7 +1,7 @@
-import {map, mergeMap, reduce, tap, filter} from 'rxjs/operators';
-import {from, Subject, Observable} from 'rxjs';
-import {getLogger} from 'log4js';
-import {Auth} from './auth'
+import { map, mergeMap, reduce, tap, filter } from 'rxjs/operators';
+import { from, Subject, Observable } from 'rxjs';
+import { getLogger } from 'log4js';
+import { Auth } from './auth'
 import { qGet, Method, Direction } from '../utils/rest';
 import { V1, AccountAPI } from '../utils/const';
 import { PlainObj, MsgType } from '../data/obj';
@@ -30,7 +30,7 @@ export interface AccountInfo {
     id: number,
     type: AccountType,
     subtype: string,
-    state: AccountState 
+    state: AccountState
 }
 
 export enum BalanceType {
@@ -55,30 +55,30 @@ export class Account {
     auth: Auth
     accountsInfo: Map<AccountType, AccountInfo> | null
 
-    constructor (authService: Auth){
+    constructor(authService: Auth) {
         this.auth = authService
         this.accountsInfo = null
     }
 
-    getAccountByType (type: AccountType): Promise<AccountInfo>{
-        if(this.accountsInfo != null){
+    getAccountByType(type: AccountType): Promise<AccountInfo> {
+        if (this.accountsInfo != null) {
             getLogger().debug(`use cache account:${this.accountsInfo}`)
-            return Promise.resolve(<AccountInfo> this.accountsInfo.get(type)) 
+            return Promise.resolve(<AccountInfo>this.accountsInfo.get(type))
         }
 
         return from(qGet<Array<AccountInfo>>(AccountAPI + V1.Accounts, this.auth.addSignature(AccountAPI + V1.Accounts, Method.GET, {})))
             .pipe(
                 mergeMap(datas => from(<Array<AccountInfo>>datas)),
-                reduce((acc, value)=>{
+                reduce((acc, value) => {
                     acc.set(value.type, value)
                     return acc
                 }, new Map()),
-                tap(data => {this.accountsInfo = data}),
+                tap(data => { this.accountsInfo = data }),
                 map(data => data.get(type))
             ).toPromise()
     }
 
-    getBalance (account: AccountInfo): Promise<AccountBalances> {
+    getBalance(account: AccountInfo): Promise<AccountBalances> {
         const url = `${AccountAPI + V1.Accounts}/${account.id}/balance`
         return qGet(url, this.auth.addSignature(url, Method.GET, {}))
     }
@@ -98,23 +98,23 @@ export class Account {
             map(msg => JSON.parse(<string>msg.data)),
             filter(msg => msg.topic === topic)
         )
-        .subscribe(data => {
-            if(data.errCode){
-                res.error(data)
-            }else{
-                if(data.data){
-                    res.next(data.data)
+            .subscribe(data => {
+                if (data.errCode) {
+                    res.error(data)
+                } else {
+                    if (data.data) {
+                        res.next(data.data)
+                    }
                 }
-            }
+            })
+
+        pool.send({
+            op: Op.Sub,
+            topic,
+            model: includeFrozen ? 1 : 0
         })
 
-       pool.send({
-           op: Op.Sub,
-           topic,
-           model: includeFrozen? 1: 0
-       })
-
-       return res
+        return res
     }
 }
 
@@ -137,11 +137,11 @@ export interface AccountHistoryInput {
 
 export interface AccountHistoryItem {
     accountId: number
-    currency: string 
+    currency: string
     transactAmt: string
     transactType: string
     recordId: number
     availBalance: string,
     acctBalance: string,
-    transactTime: number 
+    transactTime: number
 }

@@ -1,4 +1,4 @@
-import {prompt} from 'inquirer'
+import { prompt } from 'inquirer'
 import { Auth } from './service/auth'
 import { Order, OrderInfo } from './service/order'
 import { Account } from './service/account'
@@ -13,7 +13,7 @@ import { sendMsg } from './utils/notifier'
 import { config } from '../config'
 import { Grid } from './strategy/grid'
 async function main() {
-  process.env.UV_THREADPOOL_SIZE = "16"
+    process.env.UV_THREADPOOL_SIZE = "16"
 
     const promiseArr = [
         {
@@ -28,7 +28,7 @@ async function main() {
         }
     ]
 
-    const data =  await prompt(promiseArr)
+    const data = await prompt(promiseArr)
     const awsId = data.id as string
     const awsKey = data.key as string
 
@@ -36,9 +36,9 @@ async function main() {
         entities: [OrderInfo, StrategyInfo, StrategyOrder],
         username: config.db.username,
         password: config.db.password,
-        database: config.db.database,                
+        database: config.db.database,
         type: "mysql",
-        synchronize:true,
+        synchronize: true,
         logging: true,
     })
 
@@ -59,8 +59,8 @@ async function main() {
 
         type: StrategyType.Grid,
     }, db, authService, orderService, accountService)
-    
+
     s?.cli()
 }
 
-main().then(()=>getLogger().log("done!"))
+main().then(() => getLogger().log("done!"))
