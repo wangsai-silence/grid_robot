@@ -179,6 +179,7 @@ export class Grid implements Strategy {
 	    mergeMap(orders => from(orders)),
             map(order => order.id + ''),
             toArray(),
+            filter(orderIds => orderIds.length > 0),
             concatMap(orderIds => this.orderService.batchCancelOrders(orderIds)),
         ).toPromise()
 
@@ -315,7 +316,7 @@ export class Grid implements Strategy {
                 }, new Map())
             ).toPromise()
     
-        getLogger().log(`need ${symbolInfo.baseCurrency} ${needBalanceMap.get(symbolInfo.baseCurrency)} got ${balanceMap.get(symbolInfo.baseCurrency)}, 
+        getLogger().info(`need ${symbolInfo.baseCurrency} ${needBalanceMap.get(symbolInfo.baseCurrency)} got ${balanceMap.get(symbolInfo.baseCurrency)}, 
                      need ${symbolInfo.quoteCurrency} ${needBalanceMap.get(symbolInfo.quoteCurrency)} got ${balanceMap.get(symbolInfo.quoteCurrency)}`)
     
         return new BigNumber(balanceMap.get(symbolInfo.baseCurrency)).gte(needBalanceMap.get(symbolInfo.baseCurrency)as BigNumber) &&  

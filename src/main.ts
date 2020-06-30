@@ -42,7 +42,7 @@ async function main() {
         password: config.db.password,
         database: config.db.database,                
         type: "mysql",
-        synchronize: false,
+        synchronize: true,
         logging: false,
     })
 

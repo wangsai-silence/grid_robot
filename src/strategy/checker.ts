@@ -101,12 +101,12 @@ export class Checker {
             concatMap(order =>  from(this.db.getRepository(OrderInfo).findOne({id: order.id})).pipe(
                 mergeMap(o => {
                     if(o) {
-                        return this.db.createQueryBuilder().update(OrderInfo).set(order).where("id=:id", {id: o.id}).execute()
-                                   .then(()=>Promise.resolve(order))
-                        // return this.db.getRepository(OrderInfo).update(o, order)
-                    } else {
-                        return this.db.getRepository(OrderInfo).save(order)
+                            o.state = order.state,
+                            o.filledAmount = order.filledAmount
+                            return this.db.getRepository(OrderInfo).save(o)
                     }
+
+                    return this.db.getRepository(OrderInfo).save(order)
                 })
             )),
             filter(order => order.state === OrderState.Filled),

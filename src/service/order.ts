@@ -40,7 +40,7 @@ export class OrderInfo {
     @Column('varchar', {length: 20})
     symbol: string
 
-    @Column('bigint')
+    @Column('bigint', {nullable: true})
     accountId: number
 
     @Column('varchar', {length: 50})
@@ -193,7 +193,7 @@ export class Order {
 
     //ws 
     subOrderUpdate(pool: BasePool, symbol: string): Subject<OrderInfo> {
-        let topic = `orders.*`
+        let topic = `orders.*.update`
 
         let res = new Subject<OrderInfo>()
 
@@ -202,26 +202,28 @@ export class Order {
             map(msg => JSON.parse(<string>msg.data)),
             filter(msg => msg.topic === topic && msg.op === Op.Notify),
         ).subscribe(data => {
-            getLogger().warn(data)
-            
             if(data.errCode){
                 res.error(data)
             }else{
                 if(data.data){
                     let order = new OrderInfo()
 
+                    order.type = data.data.orderType
                     order.id = data.data.orderId
                     order.symbol = data.data.symbol
-                    order.type = data.data.orderType
+                    order.price = data.data.price
+                    order.state = data.data.orderState
                     order.filledAmount = data.data.filledAmount
                     order.filledCashAmount = data.data.filledCashAmount
-                    order.state = data.data.orderState
-                    order.price = data.data.price
-                    order.accountId = data.data.accountId
-                    order.amount = data.data.orderAmount
-                    order.createdAt = data.data.createdAt
-                    order.canceledAt = data.data.canceledAt
-                    order.filledFees = data.data.filledFees
+
+                    if(order.state === OrderState.Submitted){
+                        order.amount = data.data.unfilledAmount
+                        order.createdAt = data.ts
+                    }
+
+                    if(order.state === OrderState.Canceled) {
+                        order.canceledAt = data.ts
+                    }
 
                     res.next(order)
                 }
