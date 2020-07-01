@@ -3,24 +3,25 @@ import { config } from '../../config'
 import { sendAlert } from './notifier'
 import log4jsExtend from 'log4js-extend'
 
-// function registerErr () {
-//     const orgLogger = Reflect.getPrototypeOf(log4js.getLogger()).error
+function registerErr() {
+    let prop = Reflect.getPrototypeOf(log4js.getLogger()) as any
+    const orgLogger = prop.error
 
-//     Reflect.getPrototypeOf(log4js.getLogger()).error = function error (message, ...args) {
-//         const arrArgs = []
-//         arrArgs.push(message)
-//         arrArgs.push(args)
-//         Reflect.apply(orgLogger, log4js.getLogger(), arrArgs)
+    prop.error = function error(message: any, ...args: any[]): void {
+        const arrArgs = []
+        arrArgs.push(message)
+        arrArgs.push(args)
+        Reflect.apply(orgLogger, log4js.getLogger(), arrArgs)
 
-//         //call dingding
-//         if (message instanceof Error) {
-//             sendAlert(String(message))
-//             return
-//         }
+        //call dingding
+        if (message instanceof Error) {
+            sendAlert(message)
+            return
+        }
 
-//         dingding.sendAlert(message)
-//     }
-// }
+        sendAlert(message)
+    }
+}
 
 export function init() {
     log4js.configure({
@@ -63,6 +64,6 @@ export function init() {
         path: '.',
         format: '[@name @file:@line:@column]'
     })
+    registerErr()
     log4js.getLogger().info('Logger config finished')
-    // registerErr()
 }

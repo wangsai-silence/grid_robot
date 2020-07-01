@@ -14,6 +14,9 @@ import { init } from './utils/logger'
 import { sendMsg } from './utils/notifier'
 import { config } from '../config'
 async function main() {
+    //setup logger
+    init()
+
     process.env.UV_THREADPOOL_SIZE = "16"
 
     const promiseArr = [
@@ -55,7 +58,6 @@ async function main() {
 
     sendMsg({ msg: 'quant application starting...' })
 
-    init()
 
     // auth
     authService.sendAuth(pool).subscribe(
@@ -66,8 +68,14 @@ async function main() {
     pool.start()
 }
 
-main()
 process.on('uncaughtException', err => {
     getLogger().error(err)
     of(1).pipe(delay(3000)).subscribe(() => process.exit(0))
 })
+
+main()
+    .then(() => getLogger().info('should not be here. system shutdown'))
+    .catch(err => {
+        getLogger().error(err)
+        of(1).pipe(delay(3000)).subscribe(() => process.exit(0))
+    })
