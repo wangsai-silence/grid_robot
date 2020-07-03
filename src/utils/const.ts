@@ -63,6 +63,7 @@ export const V1: AccountAPI = {
 export const MarketAPI = 'https://api.huobi.pro'
 export const MarketDetailMerged = '/market/detail/merged'
 export const MarketSymbols = '/v1/common/symbols'
+export const MarketKline = '/market/history/kline'
 
 export const BaseCurrency = [
     'btc',

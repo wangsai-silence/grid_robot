@@ -44,7 +44,10 @@ export class Checker {
             retry(10),
         ).subscribe(
             data => getLogger().info(data),
-            err => getLogger().error(err),
+            err => {
+                getLogger().warn('Retried 10 times then quit')
+                getLogger().error(err)
+            },
             () => getLogger().warn('Task subscribe is finished. This should never happen.')
         )
 
