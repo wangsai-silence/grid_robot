@@ -90,7 +90,7 @@ export class Grid implements Strategy {
         ).toPromise()
 
         if (lackPrices.length <= 0) {
-            getLogger().warn(`no lack price for ${this.info}`)
+            getLogger().warn(`no lack price for ${JSON.stringify(this.info, null, 4)}`)
             return
         } else {
             getLogger().warn(`task ${this.info} lack price: ${lackPrices}`)
