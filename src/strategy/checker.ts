@@ -3,7 +3,7 @@ import { Order, OrderInfo, OrderState, OrderType } from "../service/order"
 import { Account } from "../service/account"
 import { Subject, from, interval, Subscription, zip, of } from "rxjs"
 import { getLogger } from "log4js"
-import { tap, debounceTime, mergeMap, concatMap, retry, map, toArray, distinct, flatMap, delay, filter } from "rxjs/operators"
+import { tap, debounceTime, mergeMap, concatMap, retry, map, toArray, distinct, flatMap, delay, filter, mapTo } from "rxjs/operators"
 import { Connection, In } from "typeorm"
 import { StrategyOrder, StrategyInfo, createStrategy, Strategy } from "./types"
 import { BasePool } from "../websocket/base_pool"
@@ -86,7 +86,7 @@ export class Checker {
 
         //check strategy 
         from(strategies).pipe(
-            map(strategy => strategy.id)
+            concatMap(strategy => of(strategy.id).pipe(delay(1000))),
         ).subscribe(
             id => this.taskCheckSubject.next(id),
             err => getLogger().error(err)
