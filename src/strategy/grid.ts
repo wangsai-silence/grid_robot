@@ -91,6 +91,7 @@ export class Grid implements Strategy {
 
         if (lackPrices.length <= 0) {
             getLogger().warn(`no lack price for ${this.info}`)
+            return
         } else {
             getLogger().warn(`task ${this.info} lack price: ${lackPrices}`)
         }

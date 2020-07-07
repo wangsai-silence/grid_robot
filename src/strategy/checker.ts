@@ -127,6 +127,10 @@ export class Checker {
             return
         }
 
-        await strategy.run()
+        try {
+            await strategy.run()
+        }catch(err) {
+            getLogger().error(err)
+        }
     }
 }
