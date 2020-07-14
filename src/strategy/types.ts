@@ -12,7 +12,8 @@ export enum StrategyType {
 
 export enum StrategyState {
     On = 1,
-    Off = 2
+    Off = 2,
+    Invalid = 3,
 }
 
 @Entity()

@@ -49,10 +49,16 @@ export class Grid implements Strategy {
     }
 
     async run() {
-        if (this.info.state == StrategyState.On) {
-            await this.handleOpen()
-        } else {
-            await this.handleClosed()
+        switch (this.info.state) {
+            case StrategyState.On: 
+                await this.handleOpen()
+                break
+            case StrategyState.Off:
+                await this.handleClosed()
+                break
+            default:
+                getLogger().info('invalid strategy, skip')
+                break
         }
     }
 
@@ -182,6 +188,16 @@ export class Grid implements Strategy {
                 toArray(),
                 filter(orderIds => orderIds.length > 0),
                 concatMap(orderIds => this.orderService.batchCancelOrders(orderIds)),
+            ).toPromise()
+
+            await from(this.db.getRepository(StrategyInfo).findOne(this.info.id)).pipe(
+                filter(s => s!==undefined),
+                map(strategy => {
+                    strategy!.state = StrategyState.Invalid
+                    return strategy
+                }),
+                mergeMap(strategy => this.db.getRepository(StrategyInfo).save(strategy!)),
+                tap(() => getLogger().info('strategy from closed changed to invalid'))
             ).toPromise()
 
         getLogger().info(`batch cancel orders ${result} success`)
