@@ -24,6 +24,7 @@ export class Grid implements Strategy {
     symbol: string
     rate: string
     prices: string[]
+    irreversiblePrice: string
     count: number
     amount: string
 
@@ -36,6 +37,7 @@ export class Grid implements Strategy {
         this.prices = content.prices
         this.count = content.count
         this.amount = content.amount
+        this.irreversiblePrice = content.irreversiblePrice? content.irreversiblePrice : content.prices[this.prices.length / 2];
 
 
         this.db = conn
@@ -86,6 +88,7 @@ export class Grid implements Strategy {
 
         //check out lack price
         const lackPrices = await from(this.prices).pipe(
+            filter(price => new BigNumber(price).comparedTo(new BigNumber(this.irreversiblePrice)) > 0),
             filter(price => !orderPrices.has(new BigNumber(price).toFixed(FixedPricePrec))),
             toArray(),
             filter(prices => prices.length > 1),
