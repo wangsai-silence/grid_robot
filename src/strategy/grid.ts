@@ -37,7 +37,7 @@ export class Grid implements Strategy {
         this.prices = content.prices
         this.count = content.count
         this.amount = content.amount
-        this.irreversiblePrice = content.irreversiblePrice? content.irreversiblePrice : content.prices[this.prices.length / 2];
+        this.irreversiblePrice = content.irreversiblePrice? content.irreversiblePrice : content.prices ? content.prices[content.prices.length / 2]: undefined;
 
 
         this.db = conn
@@ -223,6 +223,26 @@ export class Grid implements Strategy {
         const marketInfo = await getMergedDetail(symbolInfo.symbol)
         const curPrice = new BigNumber(marketInfo.close)
 
+
+        const account = await this.accountService.getAccountByType(AccountType.Spot);
+
+        const balance = await from(this.accountService.getBalance(account)).pipe(
+            mergeMap(data => from(data.list)),
+            filter(balance => balance.type === BalanceType.Trade),
+            tap(data => {
+                if (data.balance !== '0') {
+                    getLogger().debug(data)
+                }
+            }),
+            reduce((acc, value) => {
+                acc.set(value.currency, value)
+                return acc
+            }, new Map<string, BalanceInfo>()),
+        ).toPromise()
+
+        let baseBalance = balance.get(symbolInfo.baseCurrency)?.balance; 
+        let quoteBalance = balance.get(symbolInfo.quoteCurrency)?.balance;
+
         //input params
         const promiseArr = [
             {
@@ -238,12 +258,12 @@ export class Grid implements Strategy {
             {
                 type: 'input',
                 name: 'grid-count',
-                message: 'Please input grid count:\n'
+                message: `Available balance:${symbolInfo.baseCurrency}:${baseBalance}, ${symbolInfo.quoteCurrency}:${quoteBalance}. Please input grid count:\n`
             },
             {
                 type: 'input',
                 name: 'grid-amount',
-                message: `Please input amount for every grid(Precision:${symbolInfo.amountPrecision}):\n`
+                message: `Available balance:${symbolInfo.baseCurrency}:${baseBalance}, ${symbolInfo.quoteCurrency}:${quoteBalance}. Please input amount for every grid(Precision:${symbolInfo.amountPrecision}):\n`
             }
         ]
 

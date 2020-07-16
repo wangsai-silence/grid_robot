@@ -37,6 +37,7 @@ async function main() {
         username: config.db.username,
         password: config.db.password,
         database: config.db.database,
+        host: config.db.host,
         type: "mysql",
         synchronize: true,
         logging: true,
@@ -60,7 +61,7 @@ async function main() {
         type: StrategyType.Grid,
     }, db, authService, orderService, accountService)
 
-    s?.cli()
+    await s?.cli()
 }
 
-main().then(() => getLogger().log("done!"))
+main().then(() => getLogger().log("done!")).catch(err => getLogger().error(err)).finally(()=> process.exit())
