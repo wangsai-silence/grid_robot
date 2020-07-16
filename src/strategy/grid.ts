@@ -88,7 +88,7 @@ export class Grid implements Strategy {
 
         //check out lack price
         const lackPrices = await from(this.prices).pipe(
-            filter(price => new BigNumber(price).comparedTo(new BigNumber(this.irreversiblePrice)) > 0),
+            filter(price => new BigNumber(price).comparedTo(new BigNumber(this.irreversiblePrice)) > 0 && new BigNumber(price).comparedTo(new BigNumber(curPrice)) < 0),
             filter(price => !orderPrices.has(new BigNumber(price).toFixed(FixedPricePrec))),
             toArray(),
             filter(prices => prices.length > 1),
