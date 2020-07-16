@@ -229,19 +229,14 @@ export class Grid implements Strategy {
         const balance = await from(this.accountService.getBalance(account)).pipe(
             mergeMap(data => from(data.list)),
             filter(balance => balance.type === BalanceType.Trade),
-            tap(data => {
-                if (data.balance !== '0') {
-                    getLogger().debug(data)
-                }
-            }),
             reduce((acc, value) => {
                 acc.set(value.currency, value)
                 return acc
             }, new Map<string, BalanceInfo>()),
         ).toPromise()
 
-        let baseBalance = balance.get(symbolInfo.baseCurrency)?.balance; 
-        let quoteBalance = balance.get(symbolInfo.quoteCurrency)?.balance;
+        let baseBalance = new BigNumber(balance.has(symbolInfo.baseCurrency) ? balance.get(symbolInfo.baseCurrency)!.balance: 0).toFixed(6) ; 
+        let quoteBalance = new BigNumber(balance.has(symbolInfo.quoteCurrency) ? balance.get(symbolInfo.quoteCurrency)!.balance: 0).toFixed(6);
 
         //input params
         const promiseArr = [
