@@ -25,6 +25,7 @@ export class Grid implements Strategy {
     rate: string
     prices: string[]
     irreversiblePrice: string
+    irreversible: boolean
     count: number
     amount: string
 
@@ -38,7 +39,7 @@ export class Grid implements Strategy {
         this.count = content.count
         this.amount = content.amount
         this.irreversiblePrice = content.irreversiblePrice? content.irreversiblePrice : content.prices ? content.prices[content.prices.length / 2]: undefined;
-
+        this.irreversible = content.irreversible === undefined? false: content.irreversible
 
         this.db = conn
         this.authService = authService
@@ -88,7 +89,7 @@ export class Grid implements Strategy {
 
         //check out lack price
         const lackPrices = await from(this.prices).pipe(
-            filter(price => new BigNumber(price).comparedTo(new BigNumber(this.irreversiblePrice)) > 0 && new BigNumber(price).comparedTo(new BigNumber(curPrice)) < 0),
+            filter(price => !this.irreversible || (new BigNumber(price).comparedTo(new BigNumber(this.irreversiblePrice)) > 0 && new BigNumber(price).comparedTo(new BigNumber(curPrice)) < 0)),
             filter(price => !orderPrices.has(new BigNumber(price).toFixed(FixedPricePrec))),
             toArray(),
             filter(prices => prices.length > 1),
