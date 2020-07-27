@@ -109,6 +109,10 @@ export class Checker {
                         return this.db.getRepository(OrderInfo).save(o)
                     }
 
+                    if (!order.amount && order.state === OrderState.Filled) {
+                        order.amount = order.filledAmount
+                    }
+
                     return this.db.getRepository(OrderInfo).save(order)
                 })
             )),
