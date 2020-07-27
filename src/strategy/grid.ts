@@ -24,8 +24,6 @@ export class Grid implements Strategy {
     symbol: string
     rate: string
     prices: string[]
-    irreversiblePrice: string
-    irreversible: boolean
     count: number
     amount: string
 
@@ -38,8 +36,6 @@ export class Grid implements Strategy {
         this.prices = content.prices
         this.count = content.count
         this.amount = content.amount
-        this.irreversiblePrice = content.irreversiblePrice? content.irreversiblePrice : content.prices ? content.prices[content.prices.length / 2]: undefined;
-        this.irreversible = content.irreversible === undefined? false: content.irreversible
 
         this.db = conn
         this.authService = authService
@@ -53,7 +49,7 @@ export class Grid implements Strategy {
 
     async run() {
         switch (this.info.state) {
-            case StrategyState.On: 
+            case StrategyState.On:
                 await this.handleOpen()
                 break
             case StrategyState.Off:
@@ -89,7 +85,6 @@ export class Grid implements Strategy {
 
         //check out lack price
         const lackPrices = await from(this.prices).pipe(
-            filter(price => !this.irreversible || (new BigNumber(price).comparedTo(new BigNumber(this.irreversiblePrice)) > 0 && new BigNumber(price).comparedTo(new BigNumber(curPrice)) < 0)),
             filter(price => !orderPrices.has(new BigNumber(price).toFixed(FixedPricePrec))),
             toArray(),
             filter(prices => prices.length > 1),
@@ -194,15 +189,15 @@ export class Grid implements Strategy {
                 concatMap(orderIds => this.orderService.batchCancelOrders(orderIds)),
             ).toPromise()
 
-            await from(this.db.getRepository(StrategyInfo).findOne(this.info.id)).pipe(
-                filter(s => s!==undefined),
-                map(strategy => {
-                    strategy!.state = StrategyState.Invalid
-                    return strategy
-                }),
-                mergeMap(strategy => this.db.getRepository(StrategyInfo).save(strategy!)),
-                tap(() => getLogger().info('strategy from closed changed to invalid'))
-            ).toPromise()
+        await from(this.db.getRepository(StrategyInfo).findOne(this.info.id)).pipe(
+            filter(s => s !== undefined),
+            map(strategy => {
+                strategy!.state = StrategyState.Invalid
+                return strategy
+            }),
+            mergeMap(strategy => this.db.getRepository(StrategyInfo).save(strategy!)),
+            tap(() => getLogger().info('strategy from closed changed to invalid'))
+        ).toPromise()
 
         getLogger().info(`batch cancel orders ${result} success`)
     }
@@ -236,8 +231,8 @@ export class Grid implements Strategy {
             }, new Map<string, BalanceInfo>()),
         ).toPromise()
 
-        let baseBalance = new BigNumber(balance.has(symbolInfo.baseCurrency) ? balance.get(symbolInfo.baseCurrency)!.balance: 0).toFixed(6) ; 
-        let quoteBalance = new BigNumber(balance.has(symbolInfo.quoteCurrency) ? balance.get(symbolInfo.quoteCurrency)!.balance: 0).toFixed(6);
+        let baseBalance = new BigNumber(balance.has(symbolInfo.baseCurrency) ? balance.get(symbolInfo.baseCurrency)!.balance : 0).toFixed(6);
+        let quoteBalance = new BigNumber(balance.has(symbolInfo.quoteCurrency) ? balance.get(symbolInfo.quoteCurrency)!.balance : 0).toFixed(6);
 
         //input params
         const promiseArr = [
