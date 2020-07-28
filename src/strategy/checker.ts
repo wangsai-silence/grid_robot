@@ -103,11 +103,11 @@ export class Checker {
             tap(msg => sendMsg(msg)),
             concatMap(order => from(this.db.getRepository(OrderInfo).findOne({ id: order.id })).pipe(
                 mergeMap(ord => {
-                    if (!ord) {
-                        return from(this.orderService.getOrderDetail(order.id))
-                    } else {
+                    if (ord) {
                         return of(ord!)
                     }
+
+                    return from(this.orderService.getOrderDetail(order.id))
                 }),
                 map(o => {
                     o.state = order.state,
