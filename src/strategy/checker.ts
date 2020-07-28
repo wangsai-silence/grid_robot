@@ -1,7 +1,7 @@
 import { Auth } from "../service/auth"
-import { Order, OrderInfo, OrderState, OrderType } from "../service/order"
+import { Order, OrderInfo, OrderState } from "../service/order"
 import { Account } from "../service/account"
-import { Subject, from, interval, Subscription, zip, of } from "rxjs"
+import { Subject, from, interval, Subscription, of } from "rxjs"
 import { getLogger } from "log4js"
 import { tap, debounceTime, mergeMap, concatMap, retry, map, toArray, distinct, flatMap, delay, filter, mapTo } from "rxjs/operators"
 import { Connection, In } from "typeorm"
@@ -102,19 +102,19 @@ export class Checker {
             // mergeMap(symbol => this.orderService.subOrderUpdate(this.pool, symbol)),
             tap(msg => sendMsg(msg)),
             concatMap(order => from(this.db.getRepository(OrderInfo).findOne({ id: order.id })).pipe(
-                mergeMap(o => {
-                    if (o) {
-                        o.state = order.state,
-                            o.filledAmount = order.filledAmount
-                        return this.db.getRepository(OrderInfo).save(o)
+                mergeMap(ord => {
+                    if (!ord) {
+                        return from(this.orderService.getOrderDetail(order.id))
+                    } else {
+                        return of(ord!)
                     }
-
-                    if (!order.amount && order.state === OrderState.Filled) {
-                        order.amount = order.filledAmount
-                    }
-
-                    return this.db.getRepository(OrderInfo).save(order)
-                })
+                }),
+                map(o => {
+                    o.state = order.state,
+                        o.filledAmount = order.filledAmount
+                    return o
+                }),
+                mergeMap(o => this.db.getRepository(OrderInfo).save(o))
             )),
             filter(order => order.state === OrderState.Filled),
             mergeMap(order => this.db.getRepository(StrategyOrder).findOne({ where: { orderId: order.id } })),
@@ -133,7 +133,7 @@ export class Checker {
 
         try {
             await strategy.run()
-        }catch(err) {
+        } catch (err) {
             getLogger().error(err)
         }
     }
