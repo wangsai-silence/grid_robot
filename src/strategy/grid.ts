@@ -306,7 +306,7 @@ export class Grid implements Strategy {
             return
         }
 
-        this.db.getRepository(StrategyInfo).save({
+        await this.db.getRepository(StrategyInfo).save({
             state: StrategyState.On,
             type: StrategyType.Grid,
             content: {
