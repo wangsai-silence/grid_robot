@@ -46,7 +46,7 @@ export class OrderInfo {
     @Column('varchar', { length: 50 })
     amount: string
 
-    @Column('varchar', { length: 20 })
+    @Column('varchar', { length: 30 })
     price: string
 
     @Column('bigint')
