@@ -18,9 +18,9 @@ export enum OrderType {
 
 export enum OrderState {
     Filled = 'filled',
-    PartialFilled = 'partial-filled',
+    PartialFilled = 'partialFilled',
     Submitted = 'submitted',
-    PartialCanceled = 'partial-canceled',
+    PartialCanceled = 'partialCanceled',
     Canceled = 'canceled'
 }
 
